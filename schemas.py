@@ -7,6 +7,7 @@ class UserSchema(Schema):
     password = fields.Str(required=True)
     firstname = fields.Str(required=True)
     lastname = fields.Str(required=True)
+    email = fields.Str(required=True)
     bank_name = fields.Str(required=True)
     bank_number = fields.Int(required=True)
 

@@ -9,6 +9,7 @@ class UserModel(db.Model):
     password = db.Column(db.String(), nullable=False)
     firstname = db.Column(db.String(80), unique=False, nullable=False)
     lastname = db.Column(db.String(80), unique=False, nullable=False)
+    email = db.Column(db.String(80), unique=True, nullable=False)
     bank_name = db.Column(db.String(80), unique=False, nullable=False)
     bank_number = db.Column(db.Integer, unique=True, nullable=False)
 
