@@ -33,13 +33,18 @@ class UserRegister(MethodView):
     def post(self, user_data):
         user = UserModel(
             username=user_data["username"],
-            password=pbkdf2_sha256.hash(user_data["password"])
+            password=pbkdf2_sha256.hash(user_data["password"]),
+            firstname=user_data["firstname"],
+            lastname=user_data["lastname"],
+            email=user_data["email"],
+            bank_name=user_data["bank_name"],
+            bank_number=user_data["bank_number"]
         )
         try:
             db.session.add(user)
             db.session.commit()
         except SQLAlchemyError as e:
-            abort(500, message=str(e))
+            abort(500, message="Encountered an error while adding the user to the database.")
 
         return {"message": "User created successfully."}, 201
 
