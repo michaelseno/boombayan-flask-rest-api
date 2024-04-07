@@ -7,14 +7,14 @@ from db import db
 from sqlalchemy.exc import SQLAlchemyError
 
 from models import UserModel
-from schemas import UserSchema
+from schemas import UserSchema, UserLoginSchema
 
 blp = Blueprint("Users", "users", __name__, description="Operations on users")
 
 
 @blp.route("/login")
 class UserLogin(MethodView):
-    @blp.arguments(UserSchema)
+    @blp.arguments(UserLoginSchema)
     def post(self, user_data):
         user = UserModel.query.filter(
             UserModel.username == user_data["username"]
