@@ -38,8 +38,8 @@ class UserRegister(MethodView):
         try:
             db.session.add(user)
             db.session.commit()
-        except SQLAlchemyError:
-            abort(500, message="An error occurred inserting the store.")
+        except SQLAlchemyError as e:
+            abort(500, message=str(e))
 
         return {"message": "User created successfully."}, 201
 
