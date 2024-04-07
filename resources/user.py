@@ -4,7 +4,7 @@ from passlib.hash import pbkdf2_sha256
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt
 
 from db import db
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from sqlalchemy.exc import SQLAlchemyError
 
 from models import UserModel
 from schemas import UserSchema
@@ -38,8 +38,6 @@ class UserRegister(MethodView):
         try:
             db.session.add(user)
             db.session.commit()
-        except IntegrityError:
-            abort(400, message="Username already exists.")
         except SQLAlchemyError:
             abort(500, message="An error occurred inserting the store.")
 
