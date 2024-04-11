@@ -7,50 +7,78 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt
 from db import db
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
-from models import UserModel, CredentialModel
-from schemas import PlainCredentialSchema, UserSchema, PlainUserSchema
+from models import UserModel, CredentialModel, BankModel
+from schemas import PlainCredentialSchema, UserSchema, UserDisplaySchema
+
+import uuid
 
 blp = Blueprint("Users", "users", __name__, description="Operations on users")
+
+
+@blp.route("/register")
+class UserRegister(MethodView):
+    @blp.arguments(UserSchema)
+    def post(self, user_data):
+        cred_id = uuid.uuid4().hex
+        bank_id = uuid.uuid4().hex
+        credentials = user_data["credentials"]
+        banks = user_data["bank"]
+        credential = CredentialModel(
+            id=cred_id,
+            username=credentials["username"],
+            password=pbkdf2_sha256.hash(credentials["password"]),
+            is_admin=True
+        )
+        user = UserModel(
+            firstname=user_data["firstname"],
+            lastname=user_data["lastname"],
+            email=user_data["email"],
+            phone=user_data["phone"],
+            status="inactive",
+            cred_id=cred_id,
+            bank_id=bank_id
+        )
+
+        bank = BankModel(
+            id=bank_id,
+            bank_name=banks["bank_name"],
+            account_number=banks["account_number"],
+            is_active=True
+        )
+
+        try:
+            db.session.add(credential)
+            db.session.add(user)
+            db.session.add(bank)
+            db.session.commit()
+        except IntegrityError as e:
+            abort(400, message=f"User information already exist. \n{str(e)}")
+        except SQLAlchemyError as e:
+            abort(500, message=f"Encountered an error while adding the user to the database.\n{str(e)}")
+
+        return {"message": "User created successfully."}, 201
 
 
 @blp.route("/login")
 class UserLogin(MethodView):
     @blp.arguments(PlainCredentialSchema)
     def post(self, user_data):
-        user = CredentialModel.query.filter(
+        credential = CredentialModel.query.filter(
             CredentialModel.username == user_data["username"]
         ).first()
 
-        if user and pbkdf2_sha256.verify(user_data["password"], user.password):
-            additional_claims = {"is_admin": user.is_admin}
-            access_token = create_access_token(identity=user.id, additional_claims=additional_claims)
+        if credential and pbkdf2_sha256.verify(user_data["password"], credential.password):
+            additional_claims = {"is_admin": credential.is_admin}
+            access_token = create_access_token(identity=credential.id, additional_claims=additional_claims)
             return {"access_token": access_token}
 
         abort(401, message="Invalid credentials")
 
 
-@blp.route("/register")
-class UserRegister(MethodView):
-    @blp.arguments(PlainCredentialSchema)
-    def post(self, user_data):
-        user = CredentialModel(
-            username=user_data["username"],
-            password=pbkdf2_sha256.hash(user_data["password"]),
-            is_admin=True
-        )
-        try:
-            db.session.add(user)
-            db.session.commit()
-        except SQLAlchemyError as e:
-            abort(500, message=f"Encountered an error while adding the user to the database.{str(e)}")
-
-        return {"message": "User created successfully."}, 201
-
-
 @blp.route("/users")
 class UserList(MethodView):
     @jwt_required()
-    @blp.response(200, UserSchema(many=True))
+    @blp.response(200, UserDisplaySchema(many=True))
     def get(self):
         claim = get_jwt()
         if claim["is_admin"]:
@@ -62,39 +90,25 @@ class UserList(MethodView):
 @blp.route("/user")
 class User(MethodView):
     @jwt_required()
-    @blp.response(200, UserSchema)
+    @blp.response(200, UserDisplaySchema)
     def get(self):
         claim = get_jwt()
-        user = UserModel.query.get_or_404(claim["sub"])
-        return user
+        user = UserModel.query.filter(
+            UserModel.cred_id == claim["sub"]
+        ).first()
 
-    @jwt_required()
-    @blp.arguments(PlainUserSchema)
-    def post(self, user_data):
-        claim = get_jwt()
-        user = CredentialModel.query.get_or_404(claim["sub"])
         if user:
-            user_info = UserModel(
-                firstname=user_data["firstname"],
-                lastname=user_data["lastname"],
-                email=user_data["email"],
-                phone=user_data["phone"],
-                cred_id=claim["sub"],
-                status="active"
-            )
-
-            try:
-                db.session.add(user_info)
-                db.session.commit()
-            except IntegrityError:
-                abort(400, message="email already exists.")
-            except SQLAlchemyError:
-                abort(500, message="An error occurred inserting the user information to the DB.")
-        return {"message": "User successfully created."}, 201
+            user = UserModel.query.get_or_404(user.id)
+            return user
 
     @jwt_required()
-    def delete(self, user_id):
-        user = UserModel.query.get_or_404(user_id)
-        db.session.delete(user)
-        db.session.commit()
-        return {"message": "User deleted successfully"}, 200
+    def delete(self):
+        claim = get_jwt()
+        if claim["is_admin"]:
+            user = UserModel.query.filter(
+                UserModel.cred_id == claim["sub"]
+            ).first()
+            user = UserModel.query.get_or_404(user.id)
+            db.session.delete(user)
+            db.session.commit()
+            return {"message": "User deleted successfully"}, 200

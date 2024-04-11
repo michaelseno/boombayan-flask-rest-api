@@ -8,8 +8,11 @@ class UserModel(db.Model):
     firstname = db.Column(db.String(80), unique=False, nullable=False)
     lastname = db.Column(db.String(80), unique=False, nullable=False)
     email = db.Column(db.String(80), unique=True, nullable=False)
-    phone = db.Column(db.Integer, unique=False, nullable=False)
+    phone = db.Column(db.String(), unique=False, nullable=False)
     status = db.Column(db.String(10), nullable=False, server_default="active")
-    cred_id = db.Column(db.Integer, db.ForeignKey("credentials.id"), unique=False, nullable=False)
 
-    credentials = db.relationship("CredentialModel", back_populates="users")
+    cred_id = db.Column(db.String(), db.ForeignKey("credentials.id"), unique=True, nullable=False)
+    bank_id = db.Column(db.String(), db.ForeignKey("banks.id"), unique=True, nullable=False)
+
+    banks = db.relationship("BankModel", back_populates="users", cascade="all, delete")
+    credentials = db.relationship("CredentialModel", back_populates="users", cascade="all, delete")
