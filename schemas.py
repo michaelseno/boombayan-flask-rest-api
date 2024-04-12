@@ -16,12 +16,13 @@ class PlainBankSchema(Schema):
 
 
 class PlainUserSchema(Schema):
-    id = fields.Int(dump_only=True)
+    id = fields.Str(dump_only=True)
     firstname = fields.Str(required=True)
     lastname = fields.Str(required=True)
     email = fields.Str(required=True)
     phone = fields.Str(required=True)
-    status = fields.Str(dump_only=True)
+    is_active = fields.Bool(dump_only=True)
+    is_verified = fields.Bool(dump_only=True)
 
 
 class CredentialSchema(PlainCredentialSchema):
