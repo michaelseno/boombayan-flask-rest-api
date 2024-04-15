@@ -65,17 +65,17 @@ class UserRegister(MethodView):
 class UserLogin(MethodView):
     @blp.arguments(PlainCredentialSchema)
     def post(self, user_data):
-        user_info = UserModel.query.filter(
-            UserModel.credentials.username == user_data["username"]
+        user_info = CredentialModel.query.filter(
+            CredentialModel.username == user_data["username"]
         ).first()
 
-        if user_info and pbkdf2_sha256.verify(user_data["password"], user_info.credentials.password):
-            if user_info.is_active:
-                additional_claims = {"is_admin": user_info.credentials.is_admin}
-                access_token = create_access_token(identity=user_info.credentials.id, additional_claims=additional_claims)
+        if user_info and pbkdf2_sha256.verify(user_data["password"], user_info.password):
+            if user_info.users[0].is_active:
+                additional_claims = {"is_admin": user_info.is_admin}
+                access_token = create_access_token(identity=user_info.users[0].id, additional_claims=additional_claims)
                 return {"access_token": access_token}
             else:
-                abort(404, message="Failed to login due to account is already inactive.")
+                abort(404, message="Failed to login due to account is not active.")
 
         abort(401, message="Invalid credentials")
 
