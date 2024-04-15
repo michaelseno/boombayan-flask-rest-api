@@ -8,6 +8,12 @@ class PlainCredentialSchema(Schema):
     is_admin = fields.Bool(dump_only=True)
 
 
+class CredentialDisplaySchema(Schema):
+    id = fields.Str(dump_only=True)
+    username = fields.Str(required=True)
+    is_admin = fields.Bool(dump_only=True)
+
+
 class PlainBankSchema(Schema):
     id = fields.Str(dump_only=True)
     bank_name = fields.Str(required=True)
@@ -38,5 +44,5 @@ class UserSchema(PlainUserSchema):
 
 class UserDisplaySchema(PlainUserSchema):
     user_id = fields.Str(required=True, dump_only=True)
-    credentials = fields.Nested(PlainCredentialSchema(), dump_only=True)
+    credentials = fields.Nested(CredentialDisplaySchema(), dump_only=True)
     banks = fields.Nested(PlainBankSchema(), dump_only=True)
