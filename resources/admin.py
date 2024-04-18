@@ -33,7 +33,7 @@ class AdminActivateUser(MethodView):
 
 
 @blp.route("/admin/deactivate/<string:user_id>")
-class AdminVerifyUser(MethodView):
+class AdminDeactivateUser(MethodView):
     @jwt_required()
     @blp.response(200, UserDisplaySchema)
     def put(self, user_id):
@@ -49,3 +49,13 @@ class AdminVerifyUser(MethodView):
         db.session.add(user)
         db.session.commit()
         return user
+
+
+@blp.route("/admin/delete/<string:user_id>")
+class AdminDeleteUser(MethodView):
+    @jwt_required()
+    def delete(self, user_id):
+        item = UserModel.query.get_or_404(user_id)
+        db.session.delete(item)
+        db.session.commit()
+        return {"message": f"User with id: {user_id} Deleted successfully"}

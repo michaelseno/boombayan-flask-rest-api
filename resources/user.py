@@ -54,7 +54,7 @@ class UserRegister(MethodView):
             db.session.add(bank)
             db.session.commit()
         except IntegrityError as e:
-            abort(400, message=f"User information already exist. \n{str(e)}")
+            abort(400, message=f"User information already exist.")
         except SQLAlchemyError as e:
             abort(500, message=f"Encountered an error while adding the user to the database.\n{str(e)}")
 
@@ -114,7 +114,7 @@ class User(MethodView):
     def get(self):
         claim = get_jwt()
         user = UserModel.query.filter(
-            UserModel.cred_id == claim["sub"]
+            UserModel.id == claim["sub"]
         ).first()
 
         if user:
@@ -125,6 +125,7 @@ class User(MethodView):
 @blp.route("/user/<string:user_id>/verify")
 class UserVerify(MethodView):
 
+    @blp.response(200)
     def put(self, user_id):
         try:
             user = UserModel.query.get(user_id)
@@ -134,7 +135,7 @@ class UserVerify(MethodView):
 
             db.session.add(user)
             db.session.commit()
-            return {"message": "account successfully verified."}, 200
+            return {"message": "account successfully verified."}
 
         except SQLAlchemyError:
             abort(500, message="Encountered an error retrieving data.")
