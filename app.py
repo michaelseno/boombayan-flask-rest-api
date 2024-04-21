@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from db import db
 from resources.user import blp as UserBlueprint
 from resources.admin import blp as AdminBlueprint
+from resources.fund import blp as FundBlueprint
 
 
 def create_app(db_url=None):
@@ -76,4 +77,5 @@ def create_app(db_url=None):
 
     api.register_blueprint(UserBlueprint)
     api.register_blueprint(AdminBlueprint)
+    api.register_blueprint(FundBlueprint)
     return app
