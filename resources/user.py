@@ -1,9 +1,11 @@
 from flask.views import MethodView
+from flask import request
 from flask_smorest import abort, Blueprint
 from passlib.hash import pbkdf2_sha256
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt
 
 from db import db
+from components.email import Email
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from models import UserModel, CredentialModel, BankModel
@@ -18,6 +20,7 @@ blp = Blueprint("Users", "users", __name__, description="Operations on users")
 class UserRegister(MethodView):
     @blp.arguments(UserSchema)
     def post(self, user_data):
+        email = Email()
         user_id = uuid.uuid4().hex
         cred_id = uuid.uuid4().hex
         bank_id = uuid.uuid4().hex
@@ -53,12 +56,33 @@ class UserRegister(MethodView):
             db.session.add(user)
             db.session.add(bank)
             db.session.commit()
+            email.send(recipients=user_data["email"],
+                       url=f"{request.base_url}/{user_id}/verify",
+                       name=f"{user_data['firstname']} {user_data['lastname']}")
         except IntegrityError as e:
             abort(400, message=f"User information already exist.")
         except SQLAlchemyError as e:
             abort(500, message=f"Encountered an error while adding the user to the database.\n{str(e)}")
 
         return {"message": "User created successfully."}, 201
+
+
+@blp.route("/register/<string:user_id>/verify")
+class UserVerify(MethodView):
+    @blp.response(200)
+    def get(self, user_id):
+        try:
+            user = UserModel.query.get_or_404(user_id)
+
+            if user and not user.is_verified:
+                user.is_verified = True
+
+            db.session.add(user)
+            db.session.commit()
+            return {"message": "account successfully verified."}
+
+        except SQLAlchemyError:
+            abort(500, message="Encountered an error retrieving data.")
 
 
 @blp.route("/login")
@@ -85,6 +109,7 @@ class UserList(MethodView):
     @jwt_required()
     @blp.response(200, UserDisplaySchema(many=True))
     def get(self):
+        print(request.base_url)
         claim = get_jwt()
         if claim["is_admin"]:
             return UserModel.query.all()
@@ -120,22 +145,3 @@ class User(MethodView):
         if user:
             user = UserModel.query.get_or_404(user.id)
             return user
-
-
-@blp.route("/user/<string:user_id>/verify")
-class UserVerify(MethodView):
-
-    @blp.response(200)
-    def put(self, user_id):
-        try:
-            user = UserModel.query.get(user_id)
-
-            if user and not user.is_verified:
-                user.is_verified = True
-
-            db.session.add(user)
-            db.session.commit()
-            return {"message": "account successfully verified."}
-
-        except SQLAlchemyError:
-            abort(500, message="Encountered an error retrieving data.")

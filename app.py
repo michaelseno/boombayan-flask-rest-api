@@ -9,6 +9,7 @@ from db import db
 from resources.user import blp as UserBlueprint
 from resources.admin import blp as AdminBlueprint
 from resources.fund import blp as FundBlueprint
+from resources.loan import blp as LoanBlueprint
 
 
 def create_app(db_url=None):
@@ -78,4 +79,5 @@ def create_app(db_url=None):
     api.register_blueprint(UserBlueprint)
     api.register_blueprint(AdminBlueprint)
     api.register_blueprint(FundBlueprint)
+    api.register_blueprint(LoanBlueprint)
     return app

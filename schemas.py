@@ -78,3 +78,9 @@ class LoanDisplaySchema(Schema):
     date_second_approve = fields.DateTime()
     is_approved = fields.Bool(dump_only=True)
 
+
+class ApplyLoanSchema(Schema):
+    id = fields.Str(required=True, dump_only=True)
+    user_id = fields.Str(nullable=False)
+    loan_amount = fields.Float(nullable=False)
+    payment_term = fields.Int(nullable=False)
